@@ -1,4 +1,13 @@
 ---
+- name: Set nginx_vhost_path based on distribution
+  set_fact:
+    nginx_vhost_path: >-
+      {% if ansible_distribution == 'Ubuntu' %}
+        /etc/nginx/sites-available
+      {% else %}
+        /etc/nginx/conf.d
+      {% endif %}
+
 - name: Remove default nginx vhost config file (if configured).
   file:
     path: "{{ nginx_default_vhost_path }}"

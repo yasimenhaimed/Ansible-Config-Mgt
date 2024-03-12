@@ -1,24 +1,57 @@
 ---
-- name: update web, nfs, and db servers
-  hosts: webservers:nfs:db
-  remote_user: ec2-user
-  become: yes
+- hosts: nfs,webservers
+  become: true
   tasks:
-    - name: ensure wireshark is at the latest version
-      yum:
-        name: wireshark
-        state: latest
-      become: yes
-
-- name: update LB server
-  hosts: lb
-  remote_user: ubuntu
-  become: yes
-  tasks:
-    - name: Update apt repo and ensure wireshark is at the latest version
-      apt:
-        name: wireshark
-        state: latest
+    - name: Installing and updating repos
+      dnf:
         update_cache: yes
-      become: yes
+        state: present
 
+    - name: Ensure chrony is installed
+      dnf:
+        name: chrony
+        state: present
+
+    - name: Ensure chrony is running 
+      service:
+        name: chronyd
+        state: started
+        enabled: yes
+
+- hosts: db
+  become: true
+  tasks:
+    - name: Installing and updating repos
+      dnf:
+        update_cache: yes
+        state: present
+
+    - name: Ensure chrony is installed
+      dnf:
+        name: chrony
+        state: present
+
+    - name: Ensure chrony is running 
+      service:
+        name: chronyd
+        state: started
+        enabled: yes
+
+- hosts: lb
+  become: true
+  tasks:
+    - name: Installing and updating repos
+      apt:
+        update_cache: yes
+        state: present
+
+    - name: Ensure ntp is installed
+      apt:
+        name: ntp
+        state: present
+
+    - name: Ensure ntp is running 
+      service:
+        name: ntp
+        state: started
+        enabled: yes

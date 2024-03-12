@@ -1,50 +1,69 @@
 ---
-# Variable setup.
 - name: Include OS-specific variables.
-  include_vars: "{{ ansible_os_family }}.yml"
-
-- name: Define nginx_user.
+  include_vars: "RedHat.yml"
+  
+- name: Define nginx_user
   set_fact:
-    nginx_user: "{{ __nginx_user }}"
+    nginx_user: "nginx"
   when: nginx_user is not defined
-
-# Setup/install tasks.
-- include_tasks: setup-RedHat.yml
+   
+- name: Include RedHat-specific setup tasks
+  include_tasks: setup-RedHat.yml
   when: ansible_os_family == 'RedHat'
 
-- include_tasks: setup-Ubuntu.yml
+- name: Include Ubuntu-specific setup tasks
+  include_tasks: setup-Ubuntu.yml
   when: ansible_distribution == 'Ubuntu'
 
-- include_tasks: setup-Debian.yml
+- name: Include Debian-specific setup tasks
+  include_tasks: setup-Debian.yml
   when: ansible_os_family == 'Debian'
 
-- include_tasks: setup-FreeBSD.yml
+- name: Include FreeBSD-specific setup tasks
+  include_tasks: setup-FreeBSD.yml
   when: ansible_os_family == 'FreeBSD'
 
-- include_tasks: setup-OpenBSD.yml
+- name: Include OpenBSD-specific setup tasks
+  include_tasks: setup-OpenBSD.yml
   when: ansible_os_family == 'OpenBSD'
 
-- include_tasks: setup-Archlinux.yml
+- name: Include Archlinux-specific setup tasks
+  include_tasks: setup-Archlinux.yml
   when: ansible_os_family == 'Archlinux'
 
 # Vhost configuration.
 - import_tasks: vhosts.yml
 
+- name: Set webservers host name in /etc/hosts
+  become: yes
+  blockinfile: 
+    path: /etc/hosts
+    block: |
+      {{ item.ip }} {{ item.name }}
+  loop:
+    - { name: web1, ip: 172.31.19.216 }
+    - { name: web2, ip: 172.31.24.145 }
+
+- name: Debug root_group variable
+  debug:
+    var: root_group
+
 # Nginx setup.
-- name: Copy nginx configuration in place.
+- name: Copy nginx configuration in place
   become: true 
   template:
     src: "{{ nginx_conf_template }}"
     dest: "{{ nginx_conf_file_path }}"
     owner: root
-    group: "{{ root_group }}"
+    group: "{{ root_group }}"  # Ensure root_group is defined in RedHat.yml
     mode: 0644
   notify:
     - reload nginx
 
-- name: Ensure nginx service is running as configured.
+- name: Ensure nginx service is running as configured
   become: true 
   service:
     name: nginx
     state: "{{ nginx_service_state }}"
     enabled: "{{ nginx_service_enabled }}"
+  when: ansible_os_family in ['RedHat', 'Debian', 'Ubuntu']

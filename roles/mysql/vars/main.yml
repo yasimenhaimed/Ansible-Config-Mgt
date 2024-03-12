@@ -1,0 +1,2 @@
+# roles/your_role/vars/main.yml
+mysql_disable_log_bin: true

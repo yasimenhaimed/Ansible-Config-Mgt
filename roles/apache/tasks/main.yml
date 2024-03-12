@@ -44,4 +44,13 @@
   service:
     name: "{{ apache_service }}"
     state: "{{ apache_state }}"
-    enabled: "{{ apache_enabled }}"
+    enabled: true
+
+- name: Change ownership of vhosts.conf
+  become: yes
+  become_user: root
+  file:
+    path: /etc/apache2/sites-available/vhosts.conf
+    owner: root
+    group: root
+    mode: "0644"
